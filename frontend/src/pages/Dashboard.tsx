@@ -280,7 +280,6 @@ export function Dashboard() {
     <StopsTable
       stops={stops}
       onStopsChange={setStops}
-      depotId={depotId}
       onAddSample={addSampleStops}
     />
   )
@@ -457,7 +456,6 @@ export function Dashboard() {
                       stops={stops}
                       depotId={depotId}
                       routes={routes}
-                      stopById={stopById}
                       focusedRouteId={focusedRouteId}
                       height="420px"
                     />

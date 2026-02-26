@@ -69,7 +69,6 @@ interface MapViewProps {
   stops: Stop[]
   depotId: string | null
   routes: RouteResult[] | null
-  stopById: Map<string, Stop>
   focusedRouteId: number | null
   height?: string
 }
@@ -100,7 +99,6 @@ export function MapView({
   stops,
   depotId,
   routes,
-  stopById,
   focusedRouteId,
   height = '400px',
 }: MapViewProps) {

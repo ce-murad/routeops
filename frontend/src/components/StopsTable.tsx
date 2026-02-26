@@ -8,14 +8,12 @@ import type { Stop } from '@/types/models'
 interface StopsTableProps {
   stops: Stop[]
   onStopsChange: (stops: Stop[]) => void
-  depotId: string | null
   onAddSample?: () => void
 }
 
 export function StopsTable({
   stops,
   onStopsChange,
-  depotId,
   onAddSample,
 }: StopsTableProps) {
   const update = (id: string, patch: Partial<Stop>) => {
