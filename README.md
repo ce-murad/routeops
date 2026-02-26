@@ -1,209 +1,167 @@
-# RouteOps 
-A Vehicle Routing Problem (VRP) web application that allows users to create delivery points, configure fleet constraints, and visualize optimized routes on a real road network.
+# RouteOps 🚚
+
+A modern Vehicle Routing Problem (VRP) optimizer with a clean UI and real road-based routing.
+
+Built with:
+- ⚙️ FastAPI (backend)
+- 🧠 OR-Tools (optimization)
+- 🗺️ OSRM (real road routing)
+- 🎨 React + Mantine (frontend)
 
 ---
 
-## Features
+## ✨ Features
 
-- Add stops manually or via CSV
-- Configure:
-  - Number of vehicles
-  - Vehicle capacity
-  - Optimization objective (distance / time)
-- Solve routing problem using **Google OR-Tools**
-- Visualize routes on a map with **real road paths (OSRM)**
-- View KPIs:
-  - Total distance
-  - Total time
-  - Stops served
-  - Number of routes
-- Export stops to CSV
-- Interactive UI with tooltips explaining each parameter
+- Multi-vehicle route optimization
+- Capacity constraints
+- Distance vs Time optimization
+- Real road-following routes (not straight lines)
+- Interactive map visualization
+- Editable stops table
+- Sample data generator
+- Clean, modern UI
 
 ---
 
-## Tech Stack
-
-### Frontend
-- React + TypeScript (Vite)
-- Mantine UI
-- Leaflet (OpenStreetMap)
-
-### Backend
-- FastAPI (Python)
-- OR-Tools (optimization)
-- OSRM (road routing)
-
----
-
-## Project Structure
+## 📁 Project Structure
 
 
 ie/
+├── routeops-backend/
+│ ├── main.py
+│ ├── solver.py
+│ └── requirements.txt
 │
-├── endproje/ # Frontend (React)
-│
-└── routeops-backend/ # Backend (FastAPI)
+├── endproje/ (frontend)
+│ ├── src/
+│ ├── package.json
+│ └── ...
 
 
 ---
 
-## Setup Instructions
+## ⚙️ Backend Setup
 
-### 1. Backend Setup
-
-Open terminal:
+### 1. Navigate to backend
 
 ```bash
 cd routeops-backend
-
-Create virtual environment:
-
-Windows:
-
-python -m venv .venv
-.\.venv\Scripts\activate
-
-Mac/Linux:
-
-python3 -m venv .venv
-source .venv/bin/activate
-
-Install dependencies:
-
+2. Install dependencies
 pip install -r requirements.txt
-
-Run backend:
-
+3. Run server
 uvicorn main:app --reload
 
-Check backend:
+Backend will run at:
+
+http://127.0.0.1:8000
+
+Test:
 
 http://127.0.0.1:8000/health
-2. Frontend Setup
-
-Open another terminal:
-
+💻 Frontend Setup
+1. Navigate to frontend
 cd endproje
-
-Install dependencies:
-
+2. Install dependencies
 npm install
-
-Run frontend:
-
+3. Run frontend
 npm run dev
 
-Open:
+Frontend will run at:
 
 http://localhost:5173
-Environment Configuration
+▶️ How to Use
 
-Create a .env file inside endproje:
+Start backend
 
-VITE_API_BASE_URL=http://127.0.0.1:8000
+Start frontend
 
-After changing .env, restart frontend.
+Open browser at localhost:5173
 
-How It Works
+Add stops OR click "Add Sample Stops"
 
-Add or generate stops
+Select:
 
-Configure vehicles and capacity
-
-Click Solve
-
-Backend:
-
-Builds distance/time matrix
-
-Runs OR-Tools optimization
-
-Fetches road geometry via OSRM
-
-Frontend displays:
-
-Routes
-
-Map visualization
-
-KPIs
-
-Understanding Key Parameters
 Vehicles
-
-Number of delivery trucks
-
-More vehicles = more routes, shorter individual trips
 
 Capacity
 
-Max load per vehicle
+Optimization (Time / Distance)
 
-If total demand exceeds capacity, routes split or stops may be unserved
+Click Solve
 
-Objective
+⚙️ Parameters Explained
+🚗 Vehicles
 
-Distance: minimizes total kilometers
+Number of available vehicles.
 
-Time: minimizes travel time (uses OSRM durations)
+More vehicles → shorter routes
 
-Common Issues
-Backend shows "Offline"
+Fewer vehicles → longer routes
 
-Ensure backend is running:
+📦 Capacity
+
+Maximum load per vehicle.
+
+If capacity is low → more routes required
+
+If high → fewer routes
+
+🎯 Optimization
+
+Distance → shortest routes (km)
+
+Time → fastest routes (traffic-aware via OSRM)
+
+🧠 How It Works
+
+OSRM generates:
+
+Distance matrix
+
+Duration matrix
+
+OR-Tools solves VRP:
+
+Minimizes chosen objective (time or distance)
+
+Respects capacity constraints
+
+OSRM route API:
+
+Converts solution into real road geometry
+
+🚀 Future Improvements
+
+Traffic-aware live routing
+
+Time windows (delivery deadlines)
+
+Driver shift constraints
+
+Export routes to CSV/PDF
+
+Deploy backend (Render / Railway)
+
+Deploy frontend (Vercel)
+
+🛠️ Troubleshooting
+Backend not working
+
+Check if running:
 
 uvicorn main:app --reload
+Frontend stuck on "Solving..."
 
-Check:
+Backend is not running
 
-http://127.0.0.1:8000/health
-Solve gets stuck
+Wrong API URL
 
-OSRM public server may be slow
+Routes not changing (Time vs Distance)
 
-Reduce number of stops
+Small datasets → same result
 
-Ensure backend timeout handling is correct
+Try with more stops (8–15)
 
-npm not found (Mac)
-
-Install Node:
-
-brew install node
-Git not recognized
-
-Install Git:
-
-brew install git
-
-or download from:
-https://git-scm.com
-
-Notes on Routing
-
-Uses public OSRM server
-
-Routes follow real roads
-
-For production use:
-
-Self-host OSRM for better performance
-
-Future Improvements
-
-Save/load scenarios
-
-Route export (GeoJSON)
-
-Time windows & constraints
-
-Better mobile UI
-
-Deployment (Vercel + Render)
-
-Custom OSRM backend
-
-License
+📜 License
 
 MIT License
