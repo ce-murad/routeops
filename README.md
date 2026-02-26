@@ -1,136 +1,120 @@
-# 🚚 RouteOps
+RouteOps – Vehicle Routing Optimizer
+A React + Vite frontend and FastAPI + OR-Tools backend for solving and visualizing complex vehicle routing problems (VRP).
 
-Vehicle Routing Problem (VRP) web app with real-world road optimization and interactive visualization.
+## Features
+Interactive Web UI – Upload or manually manage stops, configure vehicles and capacity, then solve and inspect routes.
 
----
+CSV Workflow – Import and export stops/routes as CSV with validation for required fields and value ranges.
 
-## 📦 Features
+Routing Solver Backend – FastAPI service using OR-Tools to compute feasible routes from a JSON request.
 
-- Add stops manually or via CSV  
-- Configure vehicles, capacity, optimization objective  
-- Solve using Google OR-Tools  
-- Real road routing with OSRM  
-- Map visualization + KPIs  
-- Export data  
-- Interactive UI  
+Health Check & Status Badge – /health endpoint powers a simple “backend online/offline” indicator in the UI.
 
----
+Map-based Visualization – Leaflet-based OpenStreetMap view with depot and stop markers plus colored route polylines.
 
-## 🛠 Tech Stack
+Graceful Degradation – Frontend can run without a backend; solving fails with a friendly error if the API is unreachable.
 
-**Frontend:** React + TypeScript (Vite), Mantine UI, Leaflet  
-**Backend:** FastAPI, OR-Tools, OSRM  
+## Tech Stack
+### Frontend (endproje)
+Framework: React 18, TypeScript, Vite
 
----
+UI: Mantine (@mantine/core, @mantine/hooks, @mantine/notifications)
 
-## 📁 Project Structure
+Routing: React Router (react-router-dom)
 
-```bash
+Forms & Validation: React Hook Form, Zod, @hookform/resolvers
+
+HTTP: Axios
+
+Maps: Leaflet, react-leaflet
+
+### Backend (routeops-backend)
+Framework: FastAPI
+
+Server: Uvicorn
+
+Optimization: Google OR-Tools
+
+Data & Validation: Pydantic
+
+Numerics: NumPy
+
+HTTP Client: Requests
+
+## Project Structure
+Plaintext
 ie/
-├── endproje/           # Frontend (React)
-└── routeops-backend/   # Backend (FastAPI)
-```
+├── endproje/               # Frontend Application
+│   ├── src/                # Logic and Components
+│   ├── .env                # Environment variables
+│   ├── package.json        # Dependencies
+│   └── vite.config.ts      # Vite configuration
+└── routeops-backend/       # Backend API
+    ├── main.py             # FastAPI entry point
+    ├── solver.py           # OR-Tools logic
+    └── requirements.txt    # Python dependencies
+## Setup
+### Backend (FastAPI + OR-Tools)
+From the repo root, set up the Python environment:
 
----
-## ⚙️ Setup
-Backend
+Bash
 cd routeops-backend
-
 python -m venv .venv
 
-# Windows
-.\.venv\Scripts\activate
-
-# Mac/Linux
+# Windows (PowerShell)
+.venv\Scripts\Activate.ps1
+# macOS / Linux
 source .venv/bin/activate
 
 pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+The backend will be available at http://localhost:8000.
 
-uvicorn main:app --reload
+### Frontend (React + Vite)
+In a separate terminal:
 
----
-
-## Frontend
+Bash
 cd endproje
-
 npm install
 npm run dev
+The frontend dev server runs on http://localhost:5173.
 
----
+## Environment
+The frontend reads the backend URL from a .env file in endproje/. You can copy from .env.example:
 
-## 🔐 Environment
-VITE_API_BASE_URL=http://127.0.0.1:8000
+Bash
+# Backend API base URL (no trailing slash)
+VITE_API_BASE_URL=http://localhost:8000
+## How It Works
+Define: The React app lets you define stops and vehicle constraints.
 
----
+Request: Issues a POST /solve request containing the stop data to the FastAPI service.
 
-## ⚡ Workflow
+Optimize: solver.py uses OR-Tools to build the routing model and find the best solution.
 
-Add stops
+Visualize: The frontend renders the response on a Leaflet map and updates KPIs.
 
-Configure vehicles
+## Common Issues
+### Frontend cannot reach backend
+Make sure the backend is running and the URL matches VITE_API_BASE_URL:
 
-Click Solve
+Bash
+# Test health endpoint
+curl http://localhost:8000/health
+### Wrong or missing .env
+If the frontend cannot find the backend, ensure your .env is created:
 
-## Backend:
+Bash
+cd endproje
+cp .env.example .env
+## Roadmap
+[ ] Better solver configuration – Expose more OR-Tools parameters.
 
-Build matrix
+[ ] Persistence layer – Optional database to store scenarios.
 
-Optimize (OR-Tools)
+[ ] Authentication – Multi-user support.
 
-Fetch routes (OSRM)
+[ ] Deployment docs – Containerized deployment examples.
 
-## Frontend:
-
-Display routes
-
-Show KPIs
-
----
-
-## ⚠️ Common Issues
-
-Backend offline
-
-uvicorn main:app --reload
-
----
-
-## Slow solving
-
-OSRM public server limitation
-
-Reduce number of stops
-
----
-
-npm not found (Mac)
-
-brew install node
-
----
-
-git not found
-
-brew install git
-
----
-
-## 🚀 Future Improvements
-
-Save/load scenarios
-
-GeoJSON export
-
-Time constraints
-
-Mobile UI improvements
-
-Deployment (Vercel + Render)
-
-Self-hosted OSRM
-
----
-
-## 📄 License
-
-MIT License
+## License
+No explicit project-level license file is included yet. Until a LICENSE is added, treat this codebase as all rights reserved for internal or personal use only.
