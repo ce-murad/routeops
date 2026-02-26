@@ -29,7 +29,10 @@ Vehicle Routing Problem (VRP) web app with real-world road optimization and inte
 ie/
 ├── endproje/           # Frontend (React)
 └── routeops-backend/   # Backend (FastAPI)
-⚙️ Setup
+```
+
+---
+## ⚙️ Setup
 Backend
 cd routeops-backend
 
@@ -44,14 +47,23 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 uvicorn main:app --reload
-Frontend
+
+---
+
+## Frontend
 cd endproje
 
 npm install
 npm run dev
-🔐 Environment
+
+---
+
+## 🔐 Environment
 VITE_API_BASE_URL=http://127.0.0.1:8000
-⚡ Workflow
+
+---
+
+## ⚡ Workflow
 
 Add stops
 
@@ -59,7 +71,7 @@ Configure vehicles
 
 Click Solve
 
-Backend:
+## Backend:
 
 Build matrix
 
@@ -67,32 +79,43 @@ Optimize (OR-Tools)
 
 Fetch routes (OSRM)
 
-Frontend:
+## Frontend:
 
 Display routes
 
 Show KPIs
 
-⚠️ Common Issues
+---
+
+## ⚠️ Common Issues
 
 Backend offline
 
 uvicorn main:app --reload
 
-Slow solving
+---
+
+## Slow solving
 
 OSRM public server limitation
 
 Reduce number of stops
 
+---
+
 npm not found (Mac)
 
 brew install node
 
+---
+
 git not found
 
 brew install git
-🚀 Future Improvements
+
+---
+
+## 🚀 Future Improvements
 
 Save/load scenarios
 
@@ -106,6 +129,8 @@ Deployment (Vercel + Render)
 
 Self-hosted OSRM
 
-📄 License
+---
+
+## 📄 License
 
 MIT License
