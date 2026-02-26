@@ -3,20 +3,19 @@ from ortools.constraint_solver import pywrapcp
 import math
 import requests
 
+
 def osrm_table_matrix(points):
     """
     Returns (distance_matrix_m, duration_matrix_s)
     using OSRM public table API.
-    Falls back to None if request fails.
+    Falls back to (None, None) if request fails.
     """
     if len(points) < 2:
         return None, None
 
     coords = ";".join([f'{p["lng"]},{p["lat"]}' for p in points])
     url = f"http://router.project-osrm.org/table/v1/driving/{coords}"
-    params = {
-        "annotations": "distance,duration"
-    }
+    params = {"annotations": "distance,duration"}
 
     try:
         r = requests.get(url, params=params, timeout=(3, 7))
@@ -34,6 +33,7 @@ def osrm_table_matrix(points):
     except Exception:
         return None, None
 
+
 def haversine_km(a, b):
     R = 6371
     lat1, lon1 = math.radians(a["lat"]), math.radians(a["lng"])
@@ -49,6 +49,10 @@ def haversine_km(a, b):
 
 
 def osrm_route_geometry(points):
+    """
+    Returns a road-following polyline using OSRM route API.
+    Fallback: returns the original points.
+    """
     if len(points) < 2:
         return points
 
@@ -60,7 +64,6 @@ def osrm_route_geometry(points):
     url = f"http://router.project-osrm.org/route/v1/driving/{coords}"
     params = {"overview": "full", "geometries": "geojson"}
 
-    # 👇 connect timeout 3s, read timeout 7s (prevents “stuck forever”)
     r = requests.get(url, params=params, timeout=(3, 7))
     r.raise_for_status()
     data = r.json()
@@ -80,6 +83,7 @@ def solve_vrp(data):
     capacity = int(data["capacity"])
     objective = data.get("objective", "distance")  # "distance" or "time"
 
+    # Put depot at index 0
     depot_index = next(i for i, s in enumerate(stops) if s["id"] == depot_id)
     ordered = [stops[depot_index]] + stops[:depot_index] + stops[depot_index + 1 :]
     n = len(ordered)
@@ -92,13 +96,14 @@ def solve_vrp(data):
                 "totalTimeMin": 0,
                 "routes": 0,
                 "stopsServed": 0,
+                "matrixUsed": "none",
+                "objective": objective,
             },
             "routes": [],
             "unservedStopIds": [s["id"] for s in ordered],
         }
 
-    # --- Build matrices: OSRM (preferred) + fallback to haversine ---
-    # nodes for OSRM should be {lat,lng}
+    # --- Build matrices: OSRM preferred + fallback to haversine ---
     nodes = [{"lat": s["lat"], "lng": s["lng"]} for s in ordered]
     osrm_dist, osrm_dur = osrm_table_matrix(nodes)
 
@@ -115,10 +120,7 @@ def solve_vrp(data):
         ]
         # 40 km/h -> seconds
         duration_s = [
-            [
-                int((distance_m[i][j] / 1000.0) / 40.0 * 3600.0)
-                for j in range(n)
-            ]
+            [int((distance_m[i][j] / 1000.0) / 40.0 * 3600.0) for j in range(n)]
             for i in range(n)
         ]
         used_matrix = "haversine"
@@ -128,13 +130,16 @@ def solve_vrp(data):
     manager = pywrapcp.RoutingIndexManager(n, vehicles, 0)
     routing = pywrapcp.RoutingModel(manager)
 
-    # --- Choose the cost callback based on objective ---
+    # --- Choose cost based on objective ---
     if objective == "time":
+
         def cost_callback(from_index, to_index):
             i = manager.IndexToNode(from_index)
             j = manager.IndexToNode(to_index)
             return duration_s[i][j]
+
     else:
+
         def cost_callback(from_index, to_index):
             i = manager.IndexToNode(from_index)
             j = manager.IndexToNode(to_index)
@@ -157,8 +162,12 @@ def solve_vrp(data):
     )
 
     search = pywrapcp.DefaultRoutingSearchParameters()
-    search.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
-    search.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
+    search.first_solution_strategy = (
+        routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
+    )
+    search.local_search_metaheuristic = (
+        routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
+    )
     search.time_limit.seconds = 5
 
     solution = routing.SolveWithParameters(search)
@@ -178,7 +187,7 @@ def solve_vrp(data):
             route_nodes.append(node)
             index = solution.Value(routing.NextVar(index))
 
-        # route_nodes has the visited nodes excluding the final End node
+        # route_nodes includes depot at start; if only depot, skip
         if len(route_nodes) <= 1:
             continue
 
@@ -193,10 +202,13 @@ def solve_vrp(data):
         except Exception:
             geometry = visit_points
 
-        # Compute route distance/time using matrices (so KPIs match objective)
+        # Compute route distance/time using matrices (so KPIs are consistent)
         route_dist_m = 0
         route_time_s = 0
-        for a, b in zip(route_nodes, route_nodes[1:]):
+
+        # include return-to-depot for metrics
+        seq = route_nodes + [0]
+        for a, b in zip(seq, seq[1:]):
             route_dist_m += distance_m[a][b]
             route_time_s += duration_s[a][b]
 
@@ -215,8 +227,7 @@ def solve_vrp(data):
                 "distanceKm": round(km, 2),
                 "timeMin": round(time_min, 1),
                 "geometry": geometry,
-                # optional debug info; harmless if frontend ignores
-                "matrixUsed": used_matrix,
+                "matrixUsed": used_matrix,  # harmless if frontend ignores
             }
         )
 
@@ -229,9 +240,9 @@ def solve_vrp(data):
             "totalTimeMin": round(total_time_min, 1),
             "routes": len(routes),
             "stopsServed": len(served),
+            "matrixUsed": used_matrix,
+            "objective": objective,
         },
         "routes": routes,
         "unservedStopIds": [s["id"] for s in ordered if s["id"] not in served],
     }
-
-    
