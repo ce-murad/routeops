@@ -1,5 +1,6 @@
 # Node
 node_modules/
+endproje/node_modules/
 dist/
 .vite/
 
@@ -7,9 +8,5 @@ dist/
 __pycache__/
 *.pyc
 
-# Env files
+# Env
 .env
-
-# OS
-.DS_Store
-Thumbs.db
