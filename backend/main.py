@@ -1,6 +1,25 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+from typing import Literal
 from solver import solve_vrp
+
+
+class StopModel(BaseModel):
+    id: str
+    name: str
+    lat: float = Field(..., ge=-90, le=90)
+    lng: float = Field(..., ge=-180, le=180)
+    demand: int = Field(default=0, ge=0)
+
+
+class SolveRequest(BaseModel):
+    stops: list[StopModel]
+    depotId: str
+    vehicles: int = Field(..., ge=1, le=50)
+    capacity: int = Field(..., ge=1)
+    distanceMetric: Literal['haversine', 'osrm'] = 'haversine'
+    objective: Literal['distance', 'time'] = 'distance'
 
 app = FastAPI(title="RouteOps Backend")
 
@@ -24,8 +43,8 @@ def health():
 
 # ✅ Solve endpoint
 @app.post("/solve")
-def solve(req: dict):
-    result = solve_vrp(req)
+def solve(req: SolveRequest):
+    result = solve_vrp(req.model_dump())
 
     if result is None:
         return {

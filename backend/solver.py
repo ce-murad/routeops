@@ -60,20 +60,24 @@ def osrm_route_geometry(points):
     if len(points) > 20:
         return points
 
-    coords = ";".join([f'{p["lng"]},{p["lat"]}' for p in points])
-    url = f"http://router.project-osrm.org/route/v1/driving/{coords}"
-    params = {"overview": "full", "geometries": "geojson"}
+    try:
+        coords = ";".join([f'{p["lng"]},{p["lat"]}' for p in points])
+        url = f"http://router.project-osrm.org/route/v1/driving/{coords}"
+        params = {"overview": "full", "geometries": "geojson"}
 
-    r = requests.get(url, params=params, timeout=(3, 7))
-    r.raise_for_status()
-    data = r.json()
+        r = requests.get(url, params=params, timeout=(3, 7))
+        r.raise_for_status()
+        data = r.json()
 
-    routes = data.get("routes", [])
-    if not routes:
+        routes = data.get("routes", [])
+        if not routes:
+            return points
+
+        line = routes[0]["geometry"]["coordinates"]  # [lon, lat]
+        return [{"lat": lat, "lng": lon} for lon, lat in line]
+
+    except Exception:
         return points
-
-    line = routes[0]["geometry"]["coordinates"]  # [lon, lat]
-    return [{"lat": lat, "lng": lon} for lon, lat in line]
 
 
 def solve_vrp(data):
