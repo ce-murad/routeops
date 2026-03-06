@@ -8,14 +8,19 @@ import '@mantine/notifications/styles.css'
 import { MantineProvider, createTheme } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
 
+/**
+ * Single source of truth for theme + providers.
+ * App.tsx previously duplicated MantineProvider/Notifications — removed there,
+ * merged its theme config (primaryColor: blue, Button size: sm) in here.
+ */
 const theme = createTheme({
-  primaryColor: 'indigo',
+  primaryColor: 'blue',
   defaultRadius: 'md',
   fontFamily:
-    'Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif',
+    'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
   headings: {
     fontFamily:
-      'Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif',
+      'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
   },
   shadows: {
     xs: '0 1px 2px rgba(0,0,0,0.06)',
@@ -23,16 +28,16 @@ const theme = createTheme({
     md: '0 8px 24px rgba(0,0,0,0.10)',
   },
   components: {
-    Card: { defaultProps: { withBorder: true, radius: 'md', shadow: 'sm' } },
-    Paper: { defaultProps: { withBorder: true, radius: 'md', shadow: 'sm' } },
-    Button: { defaultProps: { radius: 'md' } },
+    Card: { defaultProps: { withBorder: true, radius: 'md', shadow: 'xs' } },
+    Paper: { defaultProps: { withBorder: true, radius: 'md', shadow: 'xs' } },
+    Button: { defaultProps: { radius: 'md', size: 'sm' } },
     Badge: { defaultProps: { radius: 'md' } },
   },
 })
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <MantineProvider theme={theme}>
+    <MantineProvider defaultColorScheme="light" theme={theme}>
       <Notifications position="top-right" />
       <App />
     </MantineProvider>

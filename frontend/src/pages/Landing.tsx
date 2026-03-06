@@ -35,6 +35,9 @@ export function Landing() {
           >
             Start Optimizing
           </Button>
+          <Text size="xs" c="dimmed" mt="xl">
+            © {new Date().getFullYear()} Murad Abdullayev. All rights reserved.
+          </Text>
         </Box>
       </Container>
     </Box>

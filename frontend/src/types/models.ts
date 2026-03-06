@@ -27,6 +27,7 @@ export interface RouteResult {
   distanceKm: number
   timeMin: number
   geometry: Array<{ lat: number; lng: number }>
+  matrixUsed?: 'osrm' | 'haversine'
 }
 
 export interface SolveResponse {
@@ -36,6 +37,8 @@ export interface SolveResponse {
     totalTimeMin: number
     routes: number
     stopsServed: number
+    matrixUsed: 'osrm' | 'haversine' | 'none'
+    objective: 'distance' | 'time'
   }
   routes: RouteResult[]
   unservedStopIds: string[]

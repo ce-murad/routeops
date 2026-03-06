@@ -31,12 +31,13 @@ import { StopsTable } from '@/components/StopsTable'
 import type { Stop } from '@/types/models'
 import type { SolveResponse } from '@/types/models'
 import type { ProblemSettingsInput } from '@/lib/validators'
-import { parseCsv, exportStopsToCsv, downloadCsv } from '@/lib/csv'
+import { parseCsv, exportStopsToCsv, exportRoutesToCsv, downloadCsv, downloadFile } from '@/lib/csv'
 import { validateStopRow } from '@/lib/validators'
 import { generateSampleStops, DEFAULT_CENTER } from '@/lib/geo'
 import { checkHealth, solve as apiSolve, getApiErrorMessage } from '@/lib/api'
 import axios from 'axios'
 
+// Defined outside component to avoid re-creation on every render
 const csvRowSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -44,6 +45,9 @@ const csvRowSchema = z.object({
   lng: z.coerce.number(),
   demand: z.coerce.number(),
 })
+
+const csvFormSchema = z.object({ csvText: z.string() })
+type CsvFormValues = z.infer<typeof csvFormSchema>
 
 function parseCsvToStops(csvText: string): { stops: Stop[]; errors: string[] } {
   const rows = parseCsv(csvText)
@@ -72,25 +76,7 @@ function parseCsvToStops(csvText: string): { stops: Stop[]; errors: string[] } {
   return { stops, errors }
 }
 
-function downloadTextFile(content: string, filename: string, mime = 'text/plain') {
-  const blob = new Blob([content], { type: mime })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
-}
 
-function routesToCsv(solveResult: SolveResponse) {
-  const routes = solveResult?.routes ?? []
-  const header = ['routeId', 'vehicleId', 'distanceKm', 'timeMin', 'load', 'stopIds'].join(',')
-  const lines = routes.map(r => {
-    const stopIds = (r.stopIds ?? []).join('|')
-    return [r.routeId, r.vehicleId, r.distanceKm, r.timeMin, r.load, `"${stopIds}"`].join(',')
-  })
-  return [header, ...lines].join('\n')
-}
 
 export function Dashboard() {
   const [stops, setStops] = useState<Stop[]>([])
@@ -109,8 +95,6 @@ export function Dashboard() {
   const [csvErrors, setCsvErrors] = useState<string[]>([])
   const abortRef = useRef<AbortController | null>(null)
 
-  const csvFormSchema = z.object({ csvText: z.string() })
-  type CsvFormValues = z.infer<typeof csvFormSchema>
   const csvForm = useForm<CsvFormValues>({
     defaultValues: { csvText: '' },
     resolver: zodResolver(csvFormSchema),
@@ -248,8 +232,8 @@ export function Dashboard() {
   const unserved = solveResult?.unservedStopIds ?? []
   const summary = solveResult?.summary
 
-  const csvContent = (
-    <form onSubmit={csvForm.handleSubmit(handleCsvApply)}>
+  const csvContent = useMemo(() => (
+    <Box component="form" onSubmit={csvForm.handleSubmit(handleCsvApply)}>
       <Stack gap="xs">
         <Textarea
           placeholder="Paste CSV with headers: id,name,lat,lng,demand"
@@ -273,16 +257,16 @@ export function Dashboard() {
           </Alert>
         )}
       </Stack>
-    </form>
-  )
+    </Box>
+  ), [csvForm, handleCsvApply, csvErrors])
 
-  const manualContent = (
+  const manualContent = useMemo(() => (
     <StopsTable
       stops={stops}
       onStopsChange={setStops}
       onAddSample={addSampleStops}
     />
-  )
+  ), [stops, setStops, addSampleStops])
 
   return (
     <Box style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f8f9fa 0%, #ffffff 40%)' }}>
@@ -323,12 +307,12 @@ export function Dashboard() {
                 {backendOnline === true ? 'Online' : backendOnline === false ? 'Offline' : 'Checking…'}
               </Badge>
 
-              {Boolean((solveResult as any)?.summary?.matrixUsed) && (
+              {solveResult?.summary?.matrixUsed && (
                 <Badge
                   variant="light"
-                  color={((solveResult as any).summary.matrixUsed ?? '').toLowerCase() === 'osrm' ? 'green' : 'gray'}
+                  color={solveResult.summary.matrixUsed === 'osrm' ? 'green' : 'gray'}
                 >
-                  Road data: {String((solveResult as any).summary.matrixUsed).toUpperCase()}
+                  Road data: {solveResult.summary.matrixUsed.toUpperCase()}
                 </Badge>
               )}
 
@@ -489,7 +473,7 @@ export function Dashboard() {
                       <Button
                         variant="light"
                         onClick={() =>
-                          downloadTextFile(
+                          downloadFile(
                             JSON.stringify(solveResult, null, 2),
                             'solution.json',
                             'application/json'
@@ -500,7 +484,9 @@ export function Dashboard() {
                       </Button>
                       <Button
                         variant="light"
-                        onClick={() => downloadTextFile(routesToCsv(solveResult), 'routes.csv', 'text/csv')}
+                        onClick={() =>
+                          downloadCsv(exportRoutesToCsv(solveResult.routes, stopById), 'routes.csv')
+                        }
                       >
                         Download routes CSV
                       </Button>
@@ -514,6 +500,9 @@ export function Dashboard() {
             </Stack>
           </Grid.Col>
         </Grid>
+        <Text size="xs" c="dimmed" ta="center" py="md">
+          © {new Date().getFullYear()} Murad Abdullayev. All rights reserved.
+        </Text>
       </Container>
     </Box>
   )
