@@ -1,120 +1,149 @@
-RouteOps – Vehicle Routing Optimizer
-A React + Vite frontend and FastAPI + OR-Tools backend for solving and visualizing complex vehicle routing problems (VRP).
+# RouteOps — Vehicle Routing Optimizer
+
+A full-stack vehicle routing optimization app. Upload delivery stops, configure your fleet, and get optimized routes solved with Google OR-Tools — visualized on an interactive map with real road geometry via OSRM.
+
+**Live:** [routeops.vercel.app](https://routeops.vercel.app)
+
+---
 
 ## Features
-Interactive Web UI – Upload or manually manage stops, configure vehicles and capacity, then solve and inspect routes.
 
-CSV Workflow – Import and export stops/routes as CSV with validation for required fields and value ranges.
+- **VRP Solver** — Google OR-Tools with Guided Local Search, supports up to 50 vehicles
+- **Real road distances** — OSRM integration for accurate travel distance and time matrices, with haversine fallback
+- **Interactive map** — Leaflet + OpenStreetMap with road-following polylines, numbered stop markers, and per-route focus
+- **Two objectives** — Minimize total distance or minimize total travel time
+- **CSV import/export** — Upload stops via CSV, export stops and solved routes
+- **Manual entry** — Add and edit stops directly in the table
+- **KPI dashboard** — Total distance, total time, routes used, stops served
+- **Capacity warnings** — Real-time alert when total demand exceeds fleet capacity
+- **Unserved stop detection** — Highlights stops that couldn't be assigned
 
-Routing Solver Backend – FastAPI service using OR-Tools to compute feasible routes from a JSON request.
-
-Health Check & Status Badge – /health endpoint powers a simple “backend online/offline” indicator in the UI.
-
-Map-based Visualization – Leaflet-based OpenStreetMap view with depot and stop markers plus colored route polylines.
-
-Graceful Degradation – Frontend can run without a backend; solving fails with a friendly error if the API is unreachable.
+---
 
 ## Tech Stack
-### Frontend (endproje)
-Framework: React 18, TypeScript, Vite
 
-UI: Mantine (@mantine/core, @mantine/hooks, @mantine/notifications)
+### Frontend
+- React 18 + TypeScript
+- Mantine UI
+- React Leaflet + Leaflet
+- React Hook Form + Zod
+- Axios
+- Vite
 
-Routing: React Router (react-router-dom)
+### Backend
+- FastAPI
+- Google OR-Tools
+- Pydantic v2
+- OSRM (public API)
+- Python 3.11+
 
-Forms & Validation: React Hook Form, Zod, @hookform/resolvers
-
-HTTP: Axios
-
-Maps: Leaflet, react-leaflet
-
-### Backend (routeops-backend)
-Framework: FastAPI
-
-Server: Uvicorn
-
-Optimization: Google OR-Tools
-
-Data & Validation: Pydantic
-
-Numerics: NumPy
-
-HTTP Client: Requests
+---
 
 ## Project Structure
-Plaintext
+
+```
 ie/
-├── endproje/               # Frontend Application
-│   ├── src/                # Logic and Components
-│   ├── .env                # Environment variables
-│   ├── package.json        # Dependencies
-│   └── vite.config.ts      # Vite configuration
-└── routeops-backend/       # Backend API
-    ├── main.py             # FastAPI entry point
-    ├── solver.py           # OR-Tools logic
-    └── requirements.txt    # Python dependencies
-## Setup
-### Backend (FastAPI + OR-Tools)
-From the repo root, set up the Python environment:
+├── frontend/
+│   └── src/
+│       ├── pages/         # Dashboard, Landing
+│       ├── components/    # MapView, Sidebar, KpiCard, RoutesTable, StopsTable, ...
+│       ├── lib/           # api.ts, csv.ts, geo.ts, validators.ts
+│       └── types/         # models.ts
+└── backend/
+    ├── main.py            # FastAPI app, CORS, endpoints
+    └── solver.py          # OR-Tools VRP solver, OSRM integration
+```
 
-Bash
-cd routeops-backend
-python -m venv .venv
+---
 
-# Windows (PowerShell)
-.venv\Scripts\Activate.ps1
-# macOS / Linux
-source .venv/bin/activate
+## Getting Started
 
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
-The backend will be available at http://localhost:8000.
+### Backend
 
-### Frontend (React + Vite)
-In a separate terminal:
+```bash
+cd ie/backend
+pip install fastapi uvicorn ortools requests pydantic
+uvicorn main:app --reload
+```
 
-Bash
-cd endproje
+The API will be available at `http://localhost:8000`. Interactive docs at `http://localhost:8000/docs`.
+
+### Frontend
+
+```bash
+cd ie/frontend
 npm install
-npm run dev
-The frontend dev server runs on http://localhost:5173.
+```
 
-## Environment
-The frontend reads the backend URL from a .env file in endproje/. You can copy from .env.example:
+Create a `.env` file:
 
-Bash
-# Backend API base URL (no trailing slash)
+```
 VITE_API_BASE_URL=http://localhost:8000
-## How It Works
-Define: The React app lets you define stops and vehicle constraints.
+```
 
-Request: Issues a POST /solve request containing the stop data to the FastAPI service.
+Then run:
 
-Optimize: solver.py uses OR-Tools to build the routing model and find the best solution.
+```bash
+npm run dev
+```
 
-Visualize: The frontend renders the response on a Leaflet map and updates KPIs.
+Open `http://localhost:5173`.
 
-## Common Issues
-### Frontend cannot reach backend
-Make sure the backend is running and the URL matches VITE_API_BASE_URL:
+---
 
-Bash
-# Test health endpoint
-curl http://localhost:8000/health
-### Wrong or missing .env
-If the frontend cannot find the backend, ensure your .env is created:
+## API
 
-Bash
-cd endproje
-cp .env.example .env
-## Roadmap
-[ ] Better solver configuration – Expose more OR-Tools parameters.
+### `GET /health`
+Returns `{ "status": "ok" }` if the backend is running.
 
-[ ] Persistence layer – Optional database to store scenarios.
+### `POST /solve`
+Solves the VRP and returns optimized routes.
 
-[ ] Authentication – Multi-user support.
+**Request body:**
+```json
+{
+  "stops": [
+    { "id": "s1", "name": "Stop 1", "lat": 39.93, "lng": 32.85, "demand": 10 }
+  ],
+  "depotId": "s1",
+  "vehicles": 3,
+  "capacity": 100,
+  "distanceMetric": "osrm",
+  "objective": "distance"
+}
+```
 
-[ ] Deployment docs – Containerized deployment examples.
+**Response:**
+```json
+{
+  "status": "ok",
+  "summary": {
+    "totalDistanceKm": 42.5,
+    "totalTimeMin": 63.0,
+    "routes": 3,
+    "stopsServed": 15,
+    "matrixUsed": "osrm",
+    "objective": "distance"
+  },
+  "routes": [...],
+  "unservedStopIds": []
+}
+```
+
+---
+
+## CSV Format
+
+Stops CSV must have these headers:
+
+```
+id,name,lat,lng,demand
+depot,Warehouse,39.9334,32.8597,0
+s1,Customer A,39.91,32.84,15
+```
+
+---
 
 ## License
-No explicit project-level license file is included yet. Until a LICENSE is added, treat this codebase as all rights reserved for internal or personal use only.
+
+© 2025 Murad Abdullayev. All rights reserved.
