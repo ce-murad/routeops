@@ -15,7 +15,7 @@ import type { LatLngExpression } from 'leaflet'
 import type { Stop } from '@/types/models'
 import type { RouteResult } from '@/types/models'
 
-// Fix default marker icons in Vite/React (Leaflet + Webpack issue)
+// Leaflet's default marker icons break with Vite due to asset bundling — set them explicitly
 const defaultIcon = L.icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   iconRetinaUrl:

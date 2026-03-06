@@ -54,14 +54,14 @@ export function StopsTable({
         )}
       </Box>
 
-      {/* 👇 KEY FIX: horizontal scroll */}
+      {/* horizontal scroll wrapper */}
       <Box style={{ overflowX: 'auto' }}>
         <Table
           striped
           highlightOnHover
           withTableBorder
           withColumnBorders
-          style={{ minWidth: 700 }} // 👈 forces columns to have space
+          style={{ minWidth: 700 }}
         >
           <Table.Thead>
             <Table.Tr>
@@ -102,7 +102,7 @@ export function StopsTable({
                     onChange={v => update(s.id, { lat: typeof v === 'string' ? 0 : v })}
                     min={-90}
                     max={90}
-                    decimalScale={6} // 👈 more precise
+                    decimalScale={6}
                     step={0.0001}
                   />
                 </Table.Td>
