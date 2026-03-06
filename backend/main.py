@@ -23,7 +23,6 @@ class SolveRequest(BaseModel):
 
 app = FastAPI(title="RouteOps Backend")
 
-# ✅ CORS (VERY IMPORTANT)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -36,12 +35,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ Health check
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
-# ✅ Solve endpoint
+
 @app.post("/solve")
 def solve(req: SolveRequest):
     result = solve_vrp(req.model_dump())

@@ -206,7 +206,7 @@ def solve_vrp(data):
         except Exception:
             geometry = visit_points
 
-        # Compute route distance/time using matrices (so KPIs are consistent)
+        # Compute route distance/time using matrices 
         route_dist_m = 0
         route_time_s = 0
 
@@ -231,7 +231,7 @@ def solve_vrp(data):
                 "distanceKm": round(km, 2),
                 "timeMin": round(time_min, 1),
                 "geometry": geometry,
-                "matrixUsed": used_matrix,  # harmless if frontend ignores
+                "matrixUsed": used_matrix,
             }
         )
 
