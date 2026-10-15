@@ -1,3 +1,4 @@
+
 # RouteOps — Vehicle Routing Optimizer
 
 A full-stack vehicle routing optimization app. Upload delivery stops, configure your fleet, and get optimized routes solved with Google OR-Tools — visualized on an interactive map with real road geometry via OSRM.
@@ -9,7 +10,7 @@ A full-stack vehicle routing optimization app. Upload delivery stops, configure 
 ## Features
 
 - **VRP Solver** — Google OR-Tools with Guided Local Search, supports up to 50 vehicles
-- **Real road distances** — OSRM integration for accurate travel distance and time matrices, with haversine fallback
+- **Real road distances** — OSRM integration for road-network travel distance and time matrices, with Haversine fallback
 - **Interactive map** — Leaflet + OpenStreetMap with road-following polylines, numbered stop markers, and per-route focus
 - **Two objectives** — Minimize total distance or minimize total travel time
 - **CSV import/export** — Upload stops via CSV, export stops and solved routes
@@ -20,9 +21,81 @@ A full-stack vehicle routing optimization app. Upload delivery stops, configure 
 
 ---
 
+## Optimization Benchmark
+
+RouteOps was evaluated against a capacity-feasible sequential-routing baseline across **10 reproducible synthetic delivery scenarios**, with 10–40 customers per scenario.
+
+### Benchmark Results
+
+| Metric | Result |
+|---|---|
+| Average fleet distance reduction | **54.2%** |
+| Scenarios where RouteOps outperformed the baseline | **10/10** |
+| Smallest distance reduction | 33.3% |
+| Largest distance reduction | 66.4% |
+| Median distance reduction | 58.2% |
+| Optimization algorithm | Google OR-Tools — Guided Local Search |
+| Evaluation metric | Total fleet travel distance |
+
+### Results by Scenario Size
+
+| Customers | Scenarios | Average Distance Reduction |
+|---|---|---|
+| 10 | 3 | 40.6% |
+| 20 | 4 | 56.2% |
+| 40 | 3 | 65.2% |
+| **Overall** | **10** | **54.2%** |
+
+### Methodology
+
+The benchmark compares two routing approaches under identical scenario conditions:
+
+1. **Sequential routing baseline:** Customers are assigned to vehicles in a predetermined order, respecting vehicle capacity constraints, without route optimization.
+2. **RouteOps optimization:** The same delivery scenario is solved using Google OR-Tools with Guided Local Search.
+
+Both approaches use the same depot, customer coordinates, vehicle capacities, demands, and distance matrix.
+
+The benchmark uses:
+
+- Synthetic delivery locations generated around Ankara, Türkiye
+- Straight-line (Haversine) distance estimates
+- Reproducible random scenario generation
+- Vehicle capacity constraints
+- Total fleet distance, including return trips to the depot
+
+Percentage improvement is calculated as:
+
+**Distance Reduction (%) = (Baseline Distance − RouteOps Distance) / Baseline Distance × 100**
+
+The reported 54.2% represents the arithmetic mean of the percentage reductions across the 10 benchmark scenarios.
+
+**Limitations:** These results demonstrate performance relative to the specified sequential-routing baseline on synthetic scenarios. They do not establish equivalent savings in actual road-network distance, fuel consumption, delivery costs, or real-world logistics operations. They also do not establish global optimality or superiority over other professional routing optimizers.
+
+### Reproducing the Benchmark
+
+The benchmark implementation and recorded results are available in:
+
+- `backend/benchmark.py` — Scenario generation, baseline comparison, and optimization evaluation
+- `backend/benchmark_results.csv` — Recorded results for the 10 scenarios
+
+From the project backend directory:
+
+```bash
+cd ie/backend
+python -m pip install -r requirements.txt
+python benchmark.py
+```
+
+The script runs the benchmark scenarios and generates `benchmark_results.csv`.
+
+The benchmark runs separately from the web application and does not require starting the frontend.
+
+---
+
 ## Tech Stack
 
 ### Frontend
+
 - React 18 + TypeScript
 - Mantine UI
 - React Leaflet + Leaflet
@@ -31,6 +104,7 @@ A full-stack vehicle routing optimization app. Upload delivery stops, configure 
 - Vite
 
 ### Backend
+
 - FastAPI
 - Google OR-Tools
 - Pydantic v2
@@ -41,7 +115,7 @@ A full-stack vehicle routing optimization app. Upload delivery stops, configure 
 
 ## Project Structure
 
-```
+```text
 ie/
 ├── frontend/
 │   └── src/
@@ -50,8 +124,11 @@ ie/
 │       ├── lib/           # api.ts, csv.ts, geo.ts, validators.ts
 │       └── types/         # models.ts
 └── backend/
-    ├── main.py            # FastAPI app, CORS, endpoints
-    └── solver.py          # OR-Tools VRP solver, OSRM integration
+    ├── main.py                # FastAPI app, CORS, endpoints
+    ├── solver.py              # OR-Tools VRP solver, OSRM integration
+    ├── benchmark.py           # Reproducible optimization benchmark
+    ├── benchmark_results.csv  # Benchmark results
+    └── requirements.txt       # Python dependencies
 ```
 
 ---
@@ -62,7 +139,7 @@ ie/
 
 ```bash
 cd ie/backend
-pip install fastapi uvicorn ortools requests pydantic
+python -m pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
@@ -77,7 +154,7 @@ npm install
 
 Create a `.env` file:
 
-```
+```env
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
@@ -94,12 +171,15 @@ Open `http://localhost:5173`.
 ## API
 
 ### `GET /health`
+
 Returns `{ "status": "ok" }` if the backend is running.
 
 ### `POST /solve`
+
 Solves the VRP and returns optimized routes.
 
 **Request body:**
+
 ```json
 {
   "stops": [
@@ -114,6 +194,7 @@ Solves the VRP and returns optimized routes.
 ```
 
 **Response:**
+
 ```json
 {
   "status": "ok",
@@ -136,7 +217,7 @@ Solves the VRP and returns optimized routes.
 
 Stops CSV must have these headers:
 
-```
+```csv
 id,name,lat,lng,demand
 depot,Warehouse,39.9334,32.8597,0
 s1,Customer A,39.91,32.84,15
